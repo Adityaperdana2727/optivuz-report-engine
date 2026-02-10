@@ -2,14 +2,29 @@ import type { JournalRow, NormalizedPayload } from "./types";
 import { normalizeDate, normalizeKelompok, safeText, toBoolLoose, toNumber } from "./utils";
 
 export function normalizePayload(payload: any): NormalizedPayload {
-  const company = safeText(payload?.company).trim() || "Optivuz Business";
-  const logo = safeText(payload?.logo).trim() || "";
-  const address = safeText(payload?.address).trim() || "";
-  const contact = safeText(payload?.contact).trim() || "";
-  const periodFrom = normalizeDate(payload?.period?.from);
-  const periodTo = normalizeDate(payload?.period?.to);
+  let p: any = payload;
+  if (typeof p === "string") {
+    try { p = JSON.parse(p); } catch { /* ignore */ }
+  }
 
-  const rows = Array.isArray(payload?.journals) ? payload.journals : [];
+  const company = safeText(p?.company).trim() || "Optivuz Business";
+  const logo = safeText(p?.logo).trim() || "";
+  const address = safeText(p?.address).trim() || "";
+  const contact = safeText(p?.contact).trim() || "";
+  const periodFrom = normalizeDate(p?.period?.from);
+  const periodTo = normalizeDate(p?.period?.to);
+
+  let rowsValue: unknown = p?.journals;
+  if (typeof rowsValue === "string") {
+    try {
+      const parsed = JSON.parse(rowsValue);
+      rowsValue = parsed;
+      if (typeof rowsValue === "string") {
+        try { rowsValue = JSON.parse(rowsValue); } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+  }
+  const rows = Array.isArray(rowsValue) ? rowsValue : [];
 
   const journals: JournalRow[] = rows.map((r: any) => {
     const debit = toNumber(r.debit);
