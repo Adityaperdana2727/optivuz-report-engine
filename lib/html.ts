@@ -190,9 +190,9 @@ export function renderTabbedHTML(report: ReportResult): string {
   .sectionHeader .titleWrap{display:flex;flex-direction:column;gap:2px}
   .sectionHeader .title{font-weight:800;font-size:15px}
   .sectionHeader .period{font-size:11px;color:var(--muted)}
-  .tableFooter{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;font-size:11px;color:var(--muted)}
-  .tableFooter a{color:var(--brand);text-decoration:none}
-  .tableFooter a:hover{text-decoration:underline}
+  .sectionFooter{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)}
+  .sectionFooter a{color:var(--brand);text-decoration:none}
+  .sectionFooter a:hover{text-decoration:underline}
   .audit-table col.date{width:120px}
   .audit-table col.header{width:170px}
   .audit-table col.debit{width:140px}
@@ -406,20 +406,19 @@ export function renderTabbedHTML(report: ReportResult): string {
 
   initRawDataPager();
 
-  function addTableFooters(){
-    var tables = document.querySelectorAll(".section table");
-    for (var i = 0; i < tables.length; i++){
-      var table = tables[i];
-      var next = table.nextElementSibling;
-      if (next && next.classList && next.classList.contains("tableFooter")) continue;
+  function addSectionFooters(){
+    var sections = document.querySelectorAll(".section");
+    for (var i = 0; i < sections.length; i++){
+      var section = sections[i];
+      if (section.querySelector(".sectionFooter")) continue;
       var footer = document.createElement("div");
-      footer.className = "tableFooter";
+      footer.className = "sectionFooter";
       footer.innerHTML = '<span>Powered by optivuz-business</span><a href="https://optivuz.pro" target="_blank" rel="noopener">optivuz.pro</a>';
-      table.parentNode && table.parentNode.insertBefore(footer, table.nextSibling);
+      section.appendChild(footer);
     }
   }
 
-  addTableFooters();
+  addSectionFooters();
 </script>
 </body>
 </html>`;
