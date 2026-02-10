@@ -9,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Method not allowed" });
 
   try {
-    const payload = req.body || {};
+    const payload = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
     const companyId = String(payload?.company_id || "").trim();
     const companyName = String(payload?.company || "").trim();
     const periodFrom = String(payload?.period?.from || "").trim();
