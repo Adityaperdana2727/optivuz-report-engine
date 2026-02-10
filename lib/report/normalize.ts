@@ -1,11 +1,19 @@
 import type { JournalRow, NormalizedPayload } from "./types";
 import { normalizeDate, normalizeKelompok, safeText, toBoolLoose, toNumber } from "./utils";
 
-export function normalizePayload(payload: any): NormalizedPayload {
-  let p: any = payload;
-  if (typeof p === "string") {
-    try { p = JSON.parse(p); } catch { /* ignore */ }
+function tryParseJSON(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const raw = value.trim();
+  if (!raw) return value;
+  try { return JSON.parse(raw); } catch { /* ignore */ }
+  if (raw.includes("%7B") || raw.includes("%5B")) {
+    try { return JSON.parse(decodeURIComponent(raw)); } catch { /* ignore */ }
   }
+  return value;
+}
+
+export function normalizePayload(payload: any): NormalizedPayload {
+  let p: any = tryParseJSON(payload);
 
   const company = safeText(p?.company).trim() || "Optivuz Business";
   const logo = safeText(p?.logo).trim() || "";
@@ -14,15 +22,9 @@ export function normalizePayload(payload: any): NormalizedPayload {
   const periodFrom = normalizeDate(p?.period?.from);
   const periodTo = normalizeDate(p?.period?.to);
 
-  let rowsValue: unknown = p?.journals;
+  let rowsValue: unknown = tryParseJSON(p?.journals);
   if (typeof rowsValue === "string") {
-    try {
-      const parsed = JSON.parse(rowsValue);
-      rowsValue = parsed;
-      if (typeof rowsValue === "string") {
-        try { rowsValue = JSON.parse(rowsValue); } catch { /* ignore */ }
-      }
-    } catch { /* ignore */ }
+    rowsValue = tryParseJSON(rowsValue);
   }
   const rows = Array.isArray(rowsValue) ? rowsValue : [];
 
