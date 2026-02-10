@@ -190,11 +190,15 @@ export function renderTabbedHTML(report: ReportResult): string {
   .sectionHeader .titleWrap{display:flex;flex-direction:column;gap:2px}
   .sectionHeader .title{font-weight:800;font-size:15px}
   .sectionHeader .period{font-size:11px;color:var(--muted)}
+  .tableFooter{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;font-size:11px;color:var(--muted)}
+  .tableFooter a{color:var(--brand);text-decoration:none}
+  .tableFooter a:hover{text-decoration:underline}
   .audit-table col.date{width:120px}
   .audit-table col.header{width:170px}
   .audit-table col.debit{width:140px}
   .audit-table col.credit{width:140px}
   .audit-table col.status{width:90px}
+  .audit-table col.posted{width:140px}
   .audit-detail-cell{padding:0;border-bottom:1px solid var(--line)}
   .audit-detail-wrap{background:#f8fafc;padding:8px 10px}
   .audit-detail{width:100%;border-collapse:collapse}
@@ -401,6 +405,21 @@ export function renderTabbedHTML(report: ReportResult): string {
   }
 
   initRawDataPager();
+
+  function addTableFooters(){
+    var tables = document.querySelectorAll(".section table");
+    for (var i = 0; i < tables.length; i++){
+      var table = tables[i];
+      var next = table.nextElementSibling;
+      if (next && next.classList && next.classList.contains("tableFooter")) continue;
+      var footer = document.createElement("div");
+      footer.className = "tableFooter";
+      footer.innerHTML = '<span>Powered by optivuz-business</span><a href="https://optivuz.pro" target="_blank" rel="noopener">optivuz.pro</a>';
+      table.parentNode && table.parentNode.insertBefore(footer, table.nextSibling);
+    }
+  }
+
+  addTableFooters();
 </script>
 </body>
 </html>`;
@@ -952,17 +971,20 @@ function sectionAuditTrail(report: ReportResult): string {
   const entries = report.models.auditTrail.grouped.entries;
   const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
 
-  const rows = entries.map(e => `
+  const rows = entries.map(e => {
+    const posted = Array.from(new Set(e.lines.map(l => l.posted_by).filter(Boolean))).join(", ") || "-";
+    return `
     <tr data-filter-row="audit" data-date="${esc(e.date || "")}" data-text="${esc(`${e.journal_header_id} ${e.description}`)}">
       <td>${esc(fmtDate(e.date))}</td>
       <td class="muted">${esc(e.journal_header_id)}</td>
       <td>${esc(e.description || "")}</td>
       <td class="num">${money(e.total_debit)}</td>
       <td class="num">${money(e.total_credit)}</td>
+      <td>${esc(posted)}</td>
       <td>${e.is_balanced ? tag("OK", "ok") : tag("NOT OK", "bad")}</td>
     </tr>
     <tr data-filter-row="audit" data-date="${esc(e.date || "")}" data-text="${esc(`${e.journal_header_id} ${e.description}`)}">
-      <td colspan="6" class="audit-detail-cell">
+      <td colspan="7" class="audit-detail-cell">
         <div class="audit-detail-wrap">
           <table class="audit-detail">
             <colgroup>
@@ -971,11 +993,12 @@ function sectionAuditTrail(report: ReportResult): string {
               <col />
               <col style="width:140px" />
               <col style="width:140px" />
+              <col style="width:140px" />
               <col style="width:90px" />
             </colgroup>
             <thead>
               <tr>
-                <th>Tanggal</th><th>Account</th><th>Description</th><th class="num">Debit</th><th class="num">Credit</th><th>Status</th>
+                <th>Tanggal</th><th>Account</th><th>Description</th><th class="num">Debit</th><th class="num">Credit</th><th>Posted By</th><th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -986,6 +1009,7 @@ function sectionAuditTrail(report: ReportResult): string {
                   <td>${esc(l.description || "")}</td>
                   <td class="num">${money(l.debit)}</td>
                   <td class="num">${money(l.credit)}</td>
+                  <td>${esc(l.posted_by || "-")}</td>
                   <td>${esc(l.status || "-")}</td>
                 </tr>
               `).join("")}
@@ -994,7 +1018,8 @@ function sectionAuditTrail(report: ReportResult): string {
         </div>
       </td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 
   return `
   <section class="section" id="audit" data-section="audit" data-report="audit-trail" data-title="Audit Trail" data-period="${esc(period)}">
@@ -1011,10 +1036,19 @@ function sectionAuditTrail(report: ReportResult): string {
         </div>
         <input id="auditSearch" class="input" placeholder="Search header/description..." />
       </div>
-      <table>
+      <table class="audit-table">
+        <colgroup>
+          <col class="date" />
+          <col class="header" />
+          <col />
+          <col class="debit" />
+          <col class="credit" />
+          <col class="posted" />
+          <col class="status" />
+        </colgroup>
         <thead><tr>
           <th>Tanggal</th><th>Journal Header ID</th><th>Deskripsi</th>
-          <th class="num">Debit</th><th class="num">Credit</th><th>Status</th>
+          <th class="num">Debit</th><th class="num">Credit</th><th>Posted By</th><th>Status</th>
         </tr></thead>
         <tbody>${rows || ""}</tbody>
       </table>

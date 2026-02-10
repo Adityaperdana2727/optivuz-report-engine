@@ -47,6 +47,7 @@ export function normalizePayload(payload: any): NormalizedPayload {
       description: safeText(r.description),
       transaction_date: normalizeDate(r.transaction_date),
       status: safeText(r.status),
+      posted_by: safeText(r.posted_by),
     };
   });
 

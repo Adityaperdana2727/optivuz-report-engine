@@ -15,6 +15,7 @@ export type JournalRow = {
   description: string;
   transaction_date: string | null; // YYYY-MM-DD
   status: string;
+  posted_by: string;
 };
 
 export type Account = {
