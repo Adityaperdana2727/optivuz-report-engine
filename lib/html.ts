@@ -23,6 +23,17 @@ function esc(s: unknown): string {
 
 function money(n: number): string { return formatIDR(n); }
 
+function fmtDate(d: string | null): string {
+  if (!d) return "-";
+  const m = String(d).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return String(d);
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
+function fmtRange(from: string | null, to: string | null): string {
+  return `${fmtDate(from)} → ${fmtDate(to)}`;
+}
+
 function tag(label: string, tone = "muted"): string {
   const bg = tone === "ok" ? "rgba(16,185,129,.12)" : tone === "bad" ? "rgba(239,68,68,.12)" : "rgba(148,163,184,.18)";
   const fg = tone === "ok" ? "#065f46" : tone === "bad" ? "#7f1d1d" : BRAND.muted;
@@ -79,7 +90,7 @@ export function renderTabbedHTML(report: ReportResult): string {
         </div>
       </div>
       <div class="meta">
-        <div class="pill"><span class="muted">Periode</span><b>${esc(periodFrom || "-")}</b> → <b>${esc(periodTo || "-")}</b></div>
+        <div class="pill"><span class="muted">Periode</span><b>${esc(fmtDate(periodFrom))}</b> → <b>${esc(fmtDate(periodTo))}</b></div>
         <div class="pill"><span class="muted">Generated</span><b>${esc(genAt.slice(0, 19).replace("T", " "))}Z</b></div>
       </div>
     </div>`;
@@ -404,7 +415,7 @@ function sectionDashboard(report: ReportResult): string {
 
   const balancedTag = checks.isBalanced ? tag("Balanced", "ok") : tag("Not Balanced", "bad");
 
-  const period = `Period: ${periodFrom || "-"} → ${periodTo || "-"}`;
+  const period = `Period: ${fmtRange(periodFrom, periodTo)}`;
   return `
   <section class="section" id="dashboard" data-section="dashboard" data-report="dashboard" data-title="Dashboard" data-period="${esc(period)}">
     <div class="card">
@@ -423,8 +434,8 @@ function sectionDashboard(report: ReportResult): string {
         <div class="kpi"><div class="label">Net Cash Change</div><div class="val">${money(cf.totals.net_change)}</div></div>
       </div>
       <div class="note" style="margin-top:10px">
-        Period range: <b>${esc(periodFrom || "-")}</b> → <b>${esc(periodTo || "-")}</b>.
-        Balance Sheet memakai tanggal akhir periode (<b>${esc(periodTo || "-")}</b>).
+        Period range: <b>${esc(fmtDate(periodFrom))}</b> → <b>${esc(fmtDate(periodTo))}</b>.
+        Balance Sheet memakai tanggal akhir periode (<b>${esc(fmtDate(periodTo))}</b>).
       </div>
     </div>
 
@@ -455,11 +466,11 @@ function sectionDashboard(report: ReportResult): string {
 
 function sectionJournalRegister(report: ReportResult): string {
   const entries = report.models.journalRegister.grouped.entries;
-  const period = `Period: ${report.periodFrom || "-"} → ${report.periodTo || "-"}`;
+  const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
 
   const rows = entries.map(e => `
     <tr data-filter-row="jr" data-date="${esc(e.date || "")}" data-text="${esc(`${e.journal_header_id} ${e.description}`)}">
-      <td>${esc(e.date || "-")}</td>
+      <td>${esc(fmtDate(e.date))}</td>
       <td class="muted"><a class="auditLink" data-audit-headers="${esc(e.journal_header_id)}" href="#audit">${esc(e.journal_header_id)}</a></td>
       <td>${esc(e.description || "")}</td>
       <td class="num">${money(e.total_debit)}</td>
@@ -504,13 +515,13 @@ function sectionJournalRegister(report: ReportResult): string {
 
 function sectionGeneralLedger(report: ReportResult): string {
   const accounts = report.models.generalLedger.grouped.accounts;
-  const period = `Period: ${report.periodFrom || "-"} → ${report.periodTo || "-"}`;
+  const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
 
   const glCards = accounts.map(acc => {
     const dayRows = acc.days.map(day => {
       const lines = day.entries.map(r => {
         return `<tr>
-          <td>${esc(r.transaction_date || "-")}</td>
+          <td>${esc(fmtDate(r.transaction_date))}</td>
           <td class="muted">${esc(r.journal_header_id)}</td>
           <td>${esc(r.description || "")}</td>
           <td class="num">${money(r.debit)}</td>
@@ -521,7 +532,7 @@ function sectionGeneralLedger(report: ReportResult): string {
 
       return `
         <tr>
-          <td colspan="6" class="muted"><b>${esc(day.date || "(No Date)")}</b> — Day Total: ${money(day.day_debit)} / ${money(day.day_credit)}</td>
+          <td colspan="6" class="muted"><b>${esc(fmtDate(day.date || null))}</b> — Day Total: ${money(day.day_debit)} / ${money(day.day_credit)}</td>
         </tr>
         ${lines}
       `;
@@ -576,7 +587,7 @@ function sectionGeneralLedger(report: ReportResult): string {
 
 function sectionTrialBalance(report: ReportResult): string {
   const tb = report.models.trialBalance;
-  const period = `Period: ${report.periodFrom || "-"} → ${report.periodTo || "-"}`;
+  const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
 
   const rows = tb.grouped.rows.map(r => `
     <tr>
@@ -622,7 +633,7 @@ function sectionTrialBalance(report: ReportResult): string {
 
 function sectionProfitLoss(report: ReportResult): string {
   const pl = report.models.profitLoss;
-  const period = `Period: ${report.periodFrom || "-"} → ${report.periodTo || "-"}`;
+  const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
 
   const groupBlock = (group: typeof pl.grouped.income) => {
     const cats = group.categories.map(c => {
@@ -668,7 +679,7 @@ function sectionProfitLoss(report: ReportResult): string {
 
 function sectionBalanceSheet(report: ReportResult): string {
   const bs = report.models.balanceSheet;
-  const period = `As of: ${report.periodTo || "-"}`;
+  const period = `As of: ${fmtDate(report.periodTo)}`;
 
   const render = (arr: typeof bs.grouped.assets_current) => arr
     .sort((a, b) => (a.account.kelompok_neraca || "").localeCompare(b.account.kelompok_neraca || "") || a.account.account_name.localeCompare(b.account.account_name))
@@ -727,7 +738,7 @@ function sectionBalanceSheet(report: ReportResult): string {
 
 function sectionCashflow(report: ReportResult): string {
   const cf = report.models.cashflow;
-  const period = `Period: ${report.periodFrom || "-"} → ${report.periodTo || "-"}`;
+  const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
   const rows = (title: string, arr: typeof cf.grouped.operating) => `
     <div class="card">
       <h3>${title}</h3>
@@ -758,7 +769,7 @@ function sectionCashflow(report: ReportResult): string {
 
 function sectionEquityChanges(report: ReportResult): string {
   const eq = report.models.equityChanges;
-  const period = `Period: ${report.periodFrom || "-"} → ${report.periodTo || "-"}`;
+  const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
   const rows = eq.grouped.rows.map(r => `
     <tr><td>${esc(r.account.account_name)}</td><td class="num">${money(r.opening_balance)}</td><td class="num">${money(r.net_change)}</td><td class="num">${money(r.closing_balance)}</td><td>${auditLink(r.trace)}</td></tr>
   `).join("");
@@ -823,10 +834,10 @@ function sectionComparativePL(report: ReportResult): string {
   };
 
   return `
-  <section class="section" id="plc" data-section="plc" data-report="comparative-pl" data-title="Comparative Profit & Loss" data-period="${esc(cmp.current_period.from || "-")} → ${esc(cmp.current_period.to || "-")}">
+  <section class="section" id="plc" data-section="plc" data-report="comparative-pl" data-title="Comparative Profit & Loss" data-period="${esc(fmtRange(cmp.current_period.from || null, cmp.current_period.to || null))}">
     <div class="card">
-      ${sectionHeaderHTML("Comparative Profit & Loss", `Current: ${cmp.current_period.from || "-"} → ${cmp.current_period.to || "-"}`, "comparative-pl")}
-      <div class="note">Current period: ${esc(cmp.current_period.from || "-")} → ${esc(cmp.current_period.to || "-")} | Previous: ${esc(cmp.previous_period.from || "-")} → ${esc(cmp.previous_period.to || "-")}</div>
+      ${sectionHeaderHTML("Comparative Profit & Loss", `Current: ${fmtRange(cmp.current_period.from || null, cmp.current_period.to || null)}`, "comparative-pl")}
+      <div class="note">Current period: ${esc(fmtRange(cmp.current_period.from || null, cmp.current_period.to || null))} | Previous: ${esc(fmtRange(cmp.previous_period.from || null, cmp.previous_period.to || null))}</div>
     </div>
     ${renderSection(cmp.income)}
     ${renderSection(cmp.expense)}
@@ -873,10 +884,10 @@ function sectionComparativeBS(report: ReportResult): string {
   };
 
   return `
-  <section class="section" id="bsc" data-section="bsc" data-report="comparative-bs" data-title="Comparative Balance Sheet" data-period="${esc(cmp.current_as_of || "-")}">
+  <section class="section" id="bsc" data-section="bsc" data-report="comparative-bs" data-title="Comparative Balance Sheet" data-period="${esc(fmtDate(cmp.current_as_of || null))}">
     <div class="card">
-      ${sectionHeaderHTML("Comparative Balance Sheet", `As of: ${cmp.current_as_of || "-"}`, "comparative-bs")}
-      <div class="note">As-of current: ${esc(cmp.current_as_of || "-")} | As-of previous: ${esc(cmp.previous_as_of || "-")}</div>
+      ${sectionHeaderHTML("Comparative Balance Sheet", `As of: ${fmtDate(cmp.current_as_of || null)}`, "comparative-bs")}
+      <div class="note">As-of current: ${esc(fmtDate(cmp.current_as_of || null))} | As-of previous: ${esc(fmtDate(cmp.previous_as_of || null))}</div>
     </div>
     ${renderSection(cmp.assets)}
     ${renderSection(cmp.liabilities)}
@@ -897,7 +908,7 @@ function sectionComparativeBS(report: ReportResult): string {
 
 function sectionAccountMovement(report: ReportResult): string {
   const mv = report.models.accountMovement;
-  const period = `Period: ${report.periodFrom || "-"} → ${report.periodTo || "-"}`;
+  const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
   const rows = mv.grouped.rows.map(r => `
     <tr>
       <td>${esc(r.account.account_name)}</td>
@@ -939,11 +950,11 @@ function sectionAccountMovement(report: ReportResult): string {
 
 function sectionAuditTrail(report: ReportResult): string {
   const entries = report.models.auditTrail.grouped.entries;
-  const period = `Period: ${report.periodFrom || "-"} → ${report.periodTo || "-"}`;
+  const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
 
   const rows = entries.map(e => `
     <tr data-filter-row="audit" data-date="${esc(e.date || "")}" data-text="${esc(`${e.journal_header_id} ${e.description}`)}">
-      <td>${esc(e.date || "-")}</td>
+      <td>${esc(fmtDate(e.date))}</td>
       <td class="muted">${esc(e.journal_header_id)}</td>
       <td>${esc(e.description || "")}</td>
       <td class="num">${money(e.total_debit)}</td>
@@ -970,7 +981,7 @@ function sectionAuditTrail(report: ReportResult): string {
             <tbody>
               ${e.lines.map(l => `
                 <tr>
-                  <td>${esc(l.transaction_date || "-")}</td>
+                  <td>${esc(fmtDate(l.transaction_date))}</td>
                   <td>${esc(l.account_name)}</td>
                   <td>${esc(l.description || "")}</td>
                   <td class="num">${money(l.debit)}</td>
@@ -1013,7 +1024,7 @@ function sectionAuditTrail(report: ReportResult): string {
 
 function sectionAnalytics(report: ReportResult): string {
   const a = report.models.activitySummary;
-  const period = `Period: ${report.periodFrom || "-"} → ${report.periodTo || "-"}`;
+  const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
 
   const byType = a.by_type.map(x => `
     <tr><td>${esc(x.type)}</td><td class="num">${money(x.debit)}</td><td class="num">${money(x.credit)}</td><td class="num">${esc(x.lines)}</td></tr>
@@ -1024,7 +1035,7 @@ function sectionAnalytics(report: ReportResult): string {
   `).join("");
 
   const top10 = a.top10_lines.map(x => `
-    <tr><td>${esc(x.transaction_date || "-")}</td><td>${esc(x.account_name)}</td><td class="muted">${esc(x.account_type)}</td><td>${esc(x.description)}</td><td class="num">${money(Math.max(x.debit, x.credit))}</td></tr>
+    <tr><td>${esc(fmtDate(x.transaction_date))}</td><td>${esc(x.account_name)}</td><td class="muted">${esc(x.account_type)}</td><td>${esc(x.description)}</td><td class="num">${money(Math.max(x.debit, x.credit))}</td></tr>
   `).join("");
 
   return `
@@ -1057,10 +1068,10 @@ function sectionAnalytics(report: ReportResult): string {
 }
 
 function sectionRawData(report: ReportResult): string {
-  const period = `Period: ${report.periodFrom || "-"} → ${report.periodTo || "-"}`;
+  const period = `Period: ${fmtRange(report.periodFrom, report.periodTo)}`;
   const rows = report.journals.map((r, idx) => `
     <tr data-raw-row="${idx}">
-      <td>${esc(r.transaction_date || "-")}</td>
+      <td>${esc(fmtDate(r.transaction_date))}</td>
       <td class="muted">${esc(r.journal_header_id)}</td>
       <td>${esc(r.account_name)}</td>
       <td class="num">${money(r.debit)}</td>
