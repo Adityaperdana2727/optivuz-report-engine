@@ -221,7 +221,7 @@ export function renderTabbedHTML(report: ReportResult): string {
     .content{max-width:none;padding:0}
     .section{display:none}
     .section[data-print-active="true"]{display:block}
-    .section[data-print-active="true"] .card{page-break-inside:avoid}
+    .section[data-print-active="true"] .card{page-break-inside:auto}
     .printHeader,.printFooter{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
     .printHeader{position:static;padding:0 0 6mm;border-bottom:1px solid var(--line);margin-bottom:6mm}
     .printFooter{position:fixed;bottom:0;left:0;right:0;padding:6mm 0 0;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
@@ -232,6 +232,9 @@ export function renderTabbedHTML(report: ReportResult): string {
     table thead{display:table-header-group}
     table tfoot{display:table-footer-group}
     th{position:static}
+    tr{page-break-inside:avoid;break-inside:avoid}
+    .section{page-break-before:auto;break-before:auto}
+    .sectionHeader{page-break-after:avoid;break-after:avoid-page}
   }
 </style>
 </head>
