@@ -218,12 +218,12 @@ export function renderTabbedHTML(report: ReportResult): string {
     @page { size: A4; margin: 14mm; }
     body{background:#fff}
     .tabs,.toolbar,.btn,.topbar{display:none !important}
-    .content{max-width:none;padding:20mm 0}
+    .content{max-width:none;padding:0}
     .section{display:none}
     .section[data-print-active="true"]{display:block}
     .section[data-print-active="true"] .card{page-break-inside:avoid}
     .printHeader,.printFooter{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
-    .printHeader{position:fixed;top:0;left:0;right:0;padding:0 0 6mm;border-bottom:1px solid var(--line)}
+    .printHeader{position:static;padding:0 0 6mm;border-bottom:1px solid var(--line);margin-bottom:6mm}
     .printFooter{position:fixed;bottom:0;left:0;right:0;padding:6mm 0 0;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
     .printBrand{font-weight:800;font-size:14px}
     .printTitle{font-weight:700;font-size:13px}
